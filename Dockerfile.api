@@ -1,0 +1,25 @@
+ARG DOTNET_VERSION=10.0
+
+# ---------- build ----------
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS build
+WORKDIR /src
+
+# Copy project files first so restore is cached
+COPY src/DoggoDex.Api/DoggoDex.Api.csproj src/DoggoDex.Api/
+COPY src/DoggoDex.Shared/DoggoDex.Shared.csproj src/DoggoDex.Shared/
+RUN dotnet restore src/DoggoDex.Api/DoggoDex.Api.csproj
+
+COPY src/ src/
+RUN dotnet publish src/DoggoDex.Api/DoggoDex.Api.csproj \
+    -c Release -o /app/publish --no-restore
+
+# ---------- runtime ----------
+FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+
+ENV ASPNETCORE_ENVIRONMENT=Production
+EXPOSE 8080
+
+# Render provides $PORT; fall back to 8080 locally
+CMD ["sh", "-c", "ASPNETCORE_URLS=http://0.0.0.0:${PORT:-8080} exec dotnet DoggoDex.Api.dll"]
