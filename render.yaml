@@ -1,0 +1,53 @@
+# Render Blueprint: creates the database and both services from this file.
+# All three resources must stay in the same region.
+
+databases:
+  - name: doggodex-db
+    databaseName: doggodex
+    user: doggodex
+    plan: free
+    region: oregon
+
+services:
+  # ---------- Web API ----------
+  - type: web
+    name: doggodex-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    dockerContext: .
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Staging
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: doggodex-db
+          property: connectionString
+      - key: Jwt__Key
+        generateValue: true
+      - key: Jwt__Issuer
+        value: doggodex-api
+      - key: Jwt__Audience
+        value: doggodex-web
+      - key: Cors__AllowedOrigin
+        sync: false # you type this in the Render dashboard (the Web URL)
+
+  # ---------- Blazor Web ----------
+  - type: web
+    name: doggodex-web
+    runtime: docker
+    dockerfilePath: ./Dockerfile.web
+    dockerContext: .
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Staging
+      - key: Api__BaseUrl
+        sync: false # you type this in the Render dashboard (the API URL)
