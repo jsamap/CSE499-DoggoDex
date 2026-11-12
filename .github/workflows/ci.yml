@@ -24,7 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # Throwaway Postgres for integration tests (not a real secret)
     services:
       postgres:
         image: postgres:16
@@ -47,12 +46,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Skip notice (solution not created yet)
+        if: hashFiles('DoggoDex.sln') == ''
+        run: echo "DoggoDex.sln not found yet (waiting for DOG-1). Skipping build and test."
+
       - name: Setup .NET
+        if: hashFiles('DoggoDex.sln') != ''
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Cache NuGet packages
+        if: hashFiles('DoggoDex.sln') != ''
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
@@ -60,12 +65,15 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore
+        if: hashFiles('DoggoDex.sln') != ''
         run: dotnet restore DoggoDex.sln
 
       - name: Build
+        if: hashFiles('DoggoDex.sln') != ''
         run: dotnet build DoggoDex.sln --configuration Release --no-restore
 
       - name: Test
+        if: hashFiles('DoggoDex.sln') != ''
         run: >
           dotnet test DoggoDex.sln
           --configuration Release
@@ -74,7 +82,7 @@ jobs:
           --results-directory ./TestResults
 
       - name: Upload test results
-        if: always()
+        if: always() && hashFiles('DoggoDex.sln') != ''
         uses: actions/upload-artifact@v4
         with:
           name: test-results
@@ -91,7 +99,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build API image
+        if: hashFiles('src/DoggoDex.Api/DoggoDex.Api.csproj') != ''
         run: docker build -f Dockerfile.api -t doggodex-api:ci .
 
       - name: Build Web image
+        if: hashFiles('src/DoggoDex.Web/DoggoDex.Web.csproj') != ''
         run: docker build -f Dockerfile.web -t doggodex-web:ci .
