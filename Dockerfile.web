@@ -1,0 +1,35 @@
+ARG DOTNET_VERSION=10.0
+
+# ---------- build ----------
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS build
+
+# Node is only needed to compile Tailwind CSS
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+COPY src/DoggoDex.Web/DoggoDex.Web.csproj src/DoggoDex.Web/
+COPY src/DoggoDex.Shared/DoggoDex.Shared.csproj src/DoggoDex.Shared/
+RUN dotnet restore src/DoggoDex.Web/DoggoDex.Web.csproj
+
+COPY src/ src/
+
+# Build Tailwind only if Emeribe's setup has a package.json with a build:css script
+RUN if [ -f src/DoggoDex.Web/package.json ]; then \
+      cd src/DoggoDex.Web && npm ci && npm run build:css; \
+    fi
+
+RUN dotnet publish src/DoggoDex.Web/DoggoDex.Web.csproj \
+    -c Release -o /app/publish --no-restore
+
+# ---------- runtime ----------
+FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+
+ENV ASPNETCORE_ENVIRONMENT=Production
+EXPOSE 8080
+
+CMD ["sh", "-c", "ASPNETCORE_URLS=http://0.0.0.0:${PORT:-8080} exec dotnet DoggoDex.Web.dll"]
