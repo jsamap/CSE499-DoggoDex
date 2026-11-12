@@ -46,18 +46,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Skip notice (solution not created yet)
-        if: hashFiles('DoggoDex.sln') == ''
-        run: echo "DoggoDex.sln not found yet (waiting for DOG-1). Skipping build and test."
+      - name: Find solution file
+        id: sln
+        run: |
+          SLN=$(find . -maxdepth 2 \( -name '*.sln' -o -name '*.slnx' \) | head -n 1)
+          if [ -z "$SLN" ]; then
+            echo "No .sln/.slnx found yet (waiting for DOG-1). Skipping build and test."
+          else
+            echo "Using solution: $SLN"
+          fi
+          echo "path=$SLN" >> "$GITHUB_OUTPUT"
 
       - name: Setup .NET
-        if: hashFiles('DoggoDex.sln') != ''
+        if: steps.sln.outputs.path != ''
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Cache NuGet packages
-        if: hashFiles('DoggoDex.sln') != ''
+        if: steps.sln.outputs.path != ''
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
@@ -65,24 +72,24 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore
-        if: hashFiles('DoggoDex.sln') != ''
-        run: dotnet restore DoggoDex.sln
+        if: steps.sln.outputs.path != ''
+        run: dotnet restore "${{ steps.sln.outputs.path }}"
 
       - name: Build
-        if: hashFiles('DoggoDex.sln') != ''
-        run: dotnet build DoggoDex.sln --configuration Release --no-restore
+        if: steps.sln.outputs.path != ''
+        run: dotnet build "${{ steps.sln.outputs.path }}" --configuration Release --no-restore
 
       - name: Test
-        if: hashFiles('DoggoDex.sln') != ''
+        if: steps.sln.outputs.path != ''
         run: >
-          dotnet test DoggoDex.sln
+          dotnet test "${{ steps.sln.outputs.path }}"
           --configuration Release
           --no-build
           --logger "trx;LogFileName=test-results.trx"
           --results-directory ./TestResults
 
       - name: Upload test results
-        if: always() && hashFiles('DoggoDex.sln') != ''
+        if: always() && steps.sln.outputs.path != ''
         uses: actions/upload-artifact@v4
         with:
           name: test-results
