@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DoggoDex.Api/DoggoDex.Api.csproj" />
+    <Project Path="src/DoggoDex.Shared/DoggoDex.Shared.csproj" />
+    <Project Path="src/DoggoDex.Web/DoggoDex.Web.csproj" />
+  </Folder>
+</Solution>

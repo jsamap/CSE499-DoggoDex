@@ -1,6 +1,6 @@
 using DoggoDex.Api.Infrastructure;
 
-// ... after var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 var rawConnection = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Missing ConnectionStrings:DefaultConnection");
 var connectionString = DatabaseUrl.ToNpgsql(rawConnection);
@@ -8,5 +8,7 @@ var connectionString = DatabaseUrl.ToNpgsql(rawConnection);
 
 builder.Services.AddHealthChecks();
 
-// ... after var app = builder.Build();
+var app = builder.Build();
 app.MapHealthChecks("/health");
+
+app.Run();
