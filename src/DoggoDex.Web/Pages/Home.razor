@@ -1,0 +1,17 @@
+﻿@page "/"
+
+<div class="flex max-w-md flex-col gap-4">
+    <Card>
+        <FormInput Label="Email" Placeholder="you@example.com" />
+    </Card>
+    <StarRating Value="4.6" Count="17" />
+    <RatingInput Label="Leash manners" @bind-Value="score" />
+    <div class="flex gap-3">
+        <AppButton>Primary</AppButton>
+        <AppButton Variant="secondary">Secondary</AppButton>
+    </div>
+</div>
+
+@code {
+    private int score;
+}

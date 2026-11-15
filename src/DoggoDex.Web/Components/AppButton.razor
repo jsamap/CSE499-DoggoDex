@@ -1,0 +1,16 @@
+<button type="@Type" disabled="@Disabled" @onclick="OnClick" class="@Classes">
+    @ChildContent
+</button>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string Variant { get; set; } = "primary"; // primary | secondary
+    [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+    private string Classes => "inline-flex min-h-11 items-center justify-center rounded-lg border-2 px-5 font-semibold disabled:opacity-50 " +
+        (Variant == "secondary"
+            ? "border-gray-900 bg-white text-gray-900 hover:bg-gray-100"
+            : "border-brand-600 bg-brand-600 text-white hover:bg-brand-700");
+}

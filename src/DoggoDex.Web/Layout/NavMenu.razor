@@ -1,0 +1,23 @@
+<header class="border-b-2 border-gray-300 bg-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <NavLink href="" class="text-xl font-extrabold text-gray-900">DoggoDex</NavLink>
+
+        <button type="button" class="min-h-11 rounded-lg border-2 border-gray-900 px-3 sm:hidden"
+                aria-label="Toggle menu" aria-expanded="@open" @onclick="() => open = !open">
+            Menu
+        </button>
+
+        <nav class="@(open ? "flex" : "hidden") absolute left-0 right-0 top-16 flex-col gap-4 border-b-2 border-gray-300 bg-white p-4
+                    sm:static sm:flex sm:flex-row sm:items-center sm:gap-6 sm:border-0 sm:p-0">
+            <NavLink href="search" class="text-gray-900 hover:underline">Search</NavLink>
+            <NavLink href="profile" class="text-gray-900 hover:underline">My profile</NavLink>
+            <NavLink href="login" class="text-gray-900 hover:underline">Log in</NavLink>
+            <a href="signup" class="inline-flex min-h-11 items-center rounded-lg bg-brand-600 px-5 font-semibold text-white hover:bg-brand-700">Sign up</a>
+        </nav>
+    </div>
+</header>
+
+@code {
+    private bool open;
+    // Sprint 2: swap the links above based on auth state and role (Owner / Business).
+}

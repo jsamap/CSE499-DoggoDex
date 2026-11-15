@@ -1,0 +1,15 @@
+<label class="flex flex-col gap-1.5 text-sm font-semibold text-gray-900">
+    @Label
+    <input type="@Type" placeholder="@Placeholder" value="@Value" @oninput="OnInput"
+           class="min-h-11 rounded-lg border-2 border-gray-400 bg-white px-3 text-base font-normal" />
+</label>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    private Task OnInput(ChangeEventArgs e) => ValueChanged.InvokeAsync(e.Value?.ToString());
+}
