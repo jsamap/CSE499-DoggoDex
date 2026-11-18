@@ -1,6 +1,6 @@
 using DoggoDex.Api.Auth;
-using DoggoDex.Api.Domain;
-using DoggoDex.Shared.Auth;
+using DoggoDex.Api.Models;
+using DoggoDex.Shared.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 
@@ -19,22 +19,22 @@ public class TokenServiceTests
     [Fact]
     public void CreateToken_ContainsUserIdAndRole()
     {
-        var user = new ApplicationUser { Id = Guid.NewGuid(), Email = "a@b.com", DisplayName = "A" };
+        var user = new User { Email = "a@b.com" };
 
-        var (token, _) = CreateService().CreateToken(user, RoleNames.DogOwner);
+        var (token, _) = CreateService().CreateToken(user, UserRole.Owner);
         var jwt = new JsonWebTokenHandler().ReadJsonWebToken(token);
 
         Assert.Equal(user.Id.ToString(), jwt.Subject);
-        Assert.Equal(RoleNames.DogOwner, jwt.GetClaim("role").Value);
+        Assert.Equal(nameof(UserRole.Owner), jwt.GetClaim("role").Value);
         Assert.Equal("test-issuer", jwt.Issuer);
     }
 
     [Fact]
     public void CreateToken_ExpiresInTheFuture()
     {
-        var user = new ApplicationUser { Id = Guid.NewGuid(), Email = "a@b.com", DisplayName = "A" };
+        var user = new User { Email = "a@b.com" };
 
-        var (_, expires) = CreateService().CreateToken(user, RoleNames.Business);
+        var (_, expires) = CreateService().CreateToken(user, UserRole.Establishment);
 
         Assert.True(expires > DateTime.UtcNow);
     }

@@ -1,47 +1,45 @@
 using DoggoDex.Api.Auth;
-using DoggoDex.Api.Domain;
+using DoggoDex.Api.Infrastructure;
+using DoggoDex.Api.Models;
 using DoggoDex.Shared.Auth;
+using DoggoDex.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DoggoDex.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(UserManager<ApplicationUser> users, ITokenService tokens) : ControllerBase
+public class AuthController(AppDbContext db, IPasswordHasher<User> hasher, ITokenService tokens) : ControllerBase
 {
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
     {
-        if (!RoleNames.SelfAssignable.Contains(request.Role))
+        if (request.Role == UserRole.Admin)
         {
-            ModelState.AddModelError(nameof(request.Role), "Role must be DogOwner or Business.");
+            ModelState.AddModelError(nameof(request.Role), "Admin accounts cannot be self-registered.");
             return ValidationProblem(ModelState);
         }
 
-        if (await users.FindByEmailAsync(request.Email) is not null)
+        var email = NormalizeEmail(request.Email);
+
+        if (await db.Users.AnyAsync(u => u.Email == email))
             return Conflict(new ProblemDetails { Title = "That email is already registered." });
 
-        var user = new ApplicationUser
+        var user = new User
         {
-            Id = Guid.NewGuid(),
-            UserName = request.Email,
-            Email = request.Email,
-            DisplayName = request.DisplayName.Trim()
+            Email = email,
+            Role = request.Role
         };
+        user.PasswordHash = hasher.HashPassword(user, request.Password);
 
-        var create = await users.CreateAsync(user, request.Password);
-        if (!create.Succeeded)
-        {
-            foreach (var error in create.Errors)
-                ModelState.AddModelError(error.Code, error.Description);
-            return ValidationProblem(ModelState);
-        }
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
 
-        await users.AddToRoleAsync(user, request.Role);
-        return Ok(BuildResponse(user, request.Role));
+        return Ok(BuildResponse(user));
     }
 
     [HttpPost("login")]
@@ -49,50 +47,47 @@ public class AuthController(UserManager<ApplicationUser> users, ITokenService to
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
     {
         var invalid = new ProblemDetails { Title = "Invalid email or password." };
+        var email = NormalizeEmail(request.Email);
 
-        var user = await users.FindByEmailAsync(request.Email);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user is null)
             return Unauthorized(invalid);
 
-        if (await users.IsLockedOutAsync(user))
-            return StatusCode(StatusCodes.Status423Locked,
-                new ProblemDetails { Title = "Account temporarily locked. Try again later." });
-
-        if (!await users.CheckPasswordAsync(user, request.Password))
-        {
-            await users.AccessFailedAsync(user);
+        var verification = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+        if (verification == PasswordVerificationResult.Failed)
             return Unauthorized(invalid);
+
+        if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.PasswordHash = hasher.HashPassword(user, request.Password);
+            await db.SaveChangesAsync();
         }
 
-        await users.ResetAccessFailedCountAsync(user);
-
-        var role = (await users.GetRolesAsync(user)).FirstOrDefault() ?? RoleNames.DogOwner;
-        return Ok(BuildResponse(user, role));
+        return Ok(BuildResponse(user));
     }
 
     [HttpGet("me")]
     [Authorize]
     public async Task<ActionResult<UserInfo>> Me()
     {
-        var user = await users.FindByIdAsync(User.GetUserId().ToString());
-        if (user is null)
-            return Unauthorized();
+        var user = await db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == User.GetUserId());
 
-        var role = (await users.GetRolesAsync(user)).FirstOrDefault() ?? "";
-        return Ok(ToInfo(user, role));
+        return user is null ? Unauthorized() : Ok(ToInfo(user));
     }
 
-    private AuthResponse BuildResponse(ApplicationUser user, string role)
+    private AuthResponse BuildResponse(User user)
     {
-        var (token, expires) = tokens.CreateToken(user, role);
-        return new AuthResponse { Token = token, ExpiresAtUtc = expires, User = ToInfo(user, role) };
+        var (token, expires) = tokens.CreateToken(user, user.Role);
+        return new AuthResponse { Token = token, ExpiresAtUtc = expires, User = ToInfo(user) };
     }
 
-    private static UserInfo ToInfo(ApplicationUser user, string role) => new()
+    private static UserInfo ToInfo(User user) => new()
     {
         Id = user.Id,
-        Email = user.Email ?? "",
-        DisplayName = user.DisplayName,
-        Role = role
+        Email = user.Email,
+        Role = user.Role
     };
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

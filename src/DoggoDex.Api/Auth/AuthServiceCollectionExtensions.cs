@@ -1,7 +1,6 @@
 using System.Text;
-using DoggoDex.Api.Data;
-using DoggoDex.Api.Domain;
-using DoggoDex.Shared.Auth;
+using DoggoDex.Api.Models;
+using DoggoDex.Shared.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -20,20 +19,9 @@ public static class AuthServiceCollectionExtensions
 
         var jwt = config.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
-        services.AddIdentityCore<ApplicationUser>(o =>
-            {
-                o.User.RequireUniqueEmail = true;
-                o.Password.RequiredLength = 8;
-                o.Password.RequireDigit = true;
-                o.Password.RequireLowercase = true;
-                o.Password.RequireUppercase = false;
-                o.Password.RequireNonAlphanumeric = false;
-                o.Lockout.MaxFailedAccessAttempts = 5;
-                o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-            })
-            .AddRoles<IdentityRole<Guid>>()
-            .AddEntityFrameworkStores<AppDbContext>();
-
+        // Users live in the shared AppDbContext (Models.User); only Identity's password
+        // hashing primitive is used, so no Identity stores or extra tables are required.
+        services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<ITokenService, TokenService>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,8 +44,8 @@ public static class AuthServiceCollectionExtensions
             });
 
         services.AddAuthorizationBuilder()
-            .AddPolicy(Policies.OwnerOnly, p => p.RequireRole(RoleNames.DogOwner))
-            .AddPolicy(Policies.BusinessOnly, p => p.RequireRole(RoleNames.Business))
+            .AddPolicy(Policies.OwnerOnly, p => p.RequireRole(nameof(UserRole.Owner)))
+            .AddPolicy(Policies.BusinessOnly, p => p.RequireRole(nameof(UserRole.Establishment)))
             .AddPolicy(Policies.AnyUser, p => p.RequireAuthenticatedUser());
 
         return services;

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DoggoDex.Shared.Models;
 
 namespace DoggoDex.Shared.Auth;
 
@@ -8,14 +9,13 @@ public class RegisterRequest
     public string Email { get; set; } = "";
 
     [Required, MinLength(8), MaxLength(100)]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*\d).{8,100}$",
+        ErrorMessage = "Password must be 8-100 characters and contain a lowercase letter and a digit.")]
     public string Password { get; set; } = "";
 
-    [Required, MaxLength(100)]
-    public string DisplayName { get; set; } = "";
-
-    /// <summary>"DogOwner" or "Business".</summary>
+    /// <summary>Owner, Establishment or Community. Admin cannot be self-assigned.</summary>
     [Required]
-    public string Role { get; set; } = "";
+    public UserRole Role { get; set; }
 }
 
 public class LoginRequest
@@ -38,6 +38,5 @@ public class UserInfo
 {
     public Guid Id { get; set; }
     public string Email { get; set; } = "";
-    public string DisplayName { get; set; } = "";
-    public string Role { get; set; } = "";
+    public UserRole Role { get; set; }
 }
