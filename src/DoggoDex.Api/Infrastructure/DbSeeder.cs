@@ -1,11 +1,15 @@
 using DoggoDex.Api.Models;
 using DoggoDex.Shared.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DoggoDex.Api.Infrastructure;
 
 public static class DbSeeder
 {
+    /// <summary>Dev-only password shared by every seeded account: "Password1!"</summary>
+    public const string SeedPassword = "Password1!";
+
     public static async Task SeedAsync(AppDbContext context)
     {
         if (await context.Users.AnyAsync())
@@ -13,7 +17,7 @@ public static class DbSeeder
             return;
         }
 
-        const string defaultHash = "AQAAAAEAACcQAAAAEExampleHashForTestingOnly==";
+        var defaultHash = new PasswordHasher<User>().HashPassword(new User(), SeedPassword);
 
         // ==========================================
         // 1. USERS (Covering all 4 roles)

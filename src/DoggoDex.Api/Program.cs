@@ -1,3 +1,4 @@
+using DoggoDex.Api.Auth;
 using DoggoDex.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,7 @@ var connectionString = DatabaseUrl.ToNpgsql(rawConnection);
 
 builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(connectionString));
 
+builder.Services.AddDoggoDexAuth(builder.Configuration);
 builder.Services.AddHealthChecks();
 builder.Services.AddControllers();
 
@@ -33,19 +35,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "DoggoDex API V1");
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
-            {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "DoggoDex API V1");
-                options.RoutePrefix = "swagger";
-            });
-        }
+        options.RoutePrefix = "swagger";
     });
 }
 
 app.MapHealthChecks("/health");
+app.UseAuthentication();   // must come before UseAuthorization
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
