@@ -12,16 +12,37 @@ builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(connectionString));
 builder.Services.AddHealthChecks();
 builder.Services.AddControllers();
 
+// --- ADD SWAGGER SERVICES ---
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
-// --- AUTOMATIC MIGRATION & SEEDING ON STARTUP ---
+// --- AUTOMATIC MIGRATION & SEEDING ---
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    // Automatically apply any pending EF Core migrations
     await dbContext.Database.MigrateAsync();
-    // Seed initial test data
     await DbSeeder.SeedAsync(dbContext);
+}
+
+// --- ENABLE SWAGGER MIDDLEWARE ---
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "DoggoDex API V1");
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "DoggoDex API V1");
+                options.RoutePrefix = "swagger";
+            });
+        }
+    });
 }
 
 app.MapHealthChecks("/health");
