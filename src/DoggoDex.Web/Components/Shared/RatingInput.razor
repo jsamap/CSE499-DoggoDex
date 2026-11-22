@@ -1,0 +1,22 @@
+@* Input for the review form: <RatingInput Label="Leash manners" @bind-Value="leash" /> *@
+<fieldset class="flex items-center justify-between gap-6">
+    <legend class="sr-only">@Label</legend>
+    <span class="font-semibold" aria-hidden="true">@Label</span>
+    <div class="flex gap-4">
+        @for (var i = 1; i <= 5; i++)
+        {
+            var score = i;
+            <label class="flex flex-col items-center gap-1 text-sm">
+                <input type="radio" name="@Label" class="size-5" checked="@(Value == score)"
+                       @onchange="() => ValueChanged.InvokeAsync(score)" />
+                @score
+            </label>
+        }
+    </div>
+</fieldset>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public int Value { get; set; }
+    [Parameter] public EventCallback<int> ValueChanged { get; set; }
+}
