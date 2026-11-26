@@ -10,6 +10,7 @@ public class Owner
     public decimal AggregateRating { get; set; } = 0.00m;
     public int ReviewCount { get; set; } = 0;
     public string ShareableID { get; set; } = Guid.NewGuid().ToString("N");
+    public string Slug { get; set; } = string.Empty;
 
     public User User { get; set; } = null!;
     public ICollection<Dog> Dogs { get; set; } = new List<Dog>();

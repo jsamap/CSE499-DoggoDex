@@ -36,6 +36,8 @@ public class AppDbContext : DbContext
             entity.HasKey(o => o.Id);
             entity.HasIndex(o => o.UserId).IsUnique();
             entity.HasIndex(o => o.ShareableID).IsUnique();
+            entity.Property(o => o.Slug).IsRequired().HasMaxLength(80);
+            entity.HasIndex(o => o.Slug).IsUnique();
             entity.Property(o => o.Name).IsRequired();
             entity.Property(o => o.AggregateRating).HasColumnType("decimal(3,2)");
 
@@ -63,6 +65,8 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(d => d.Id);
             entity.HasIndex(d => d.ShareableID).IsUnique();
+            entity.Property(d => d.Slug).IsRequired().HasMaxLength(80);
+            entity.HasIndex(d => d.Slug).IsUnique();
             entity.Property(d => d.Name).IsRequired();
             entity.Property(d => d.AggregateRating).HasColumnType("decimal(3,2)");
             entity.Property(d => d.ReviewCount).IsRequired();

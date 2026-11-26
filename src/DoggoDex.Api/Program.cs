@@ -8,7 +8,9 @@ var rawConnection = builder.Configuration.GetConnectionString("DefaultConnection
     ?? throw new InvalidOperationException("Missing ConnectionStrings:DefaultConnection");
 var connectionString = DatabaseUrl.ToNpgsql(rawConnection);
 
-builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(o => o
+    .UseNpgsql(connectionString)
+    .AddInterceptors(new SlugSaveChangesInterceptor()));
 
 builder.Services.AddDoggoDexAuth(builder.Configuration);
 builder.Services.AddHealthChecks();
@@ -45,3 +47,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Exposed so WebApplicationFactory<Program> in the test project can boot the API.
+public partial class Program { }
