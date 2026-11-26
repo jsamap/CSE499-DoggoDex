@@ -22,7 +22,11 @@ public sealed class HttpProfileApi(HttpClient http) : IProfileApi
             + $"&type={type.ToString().ToLowerInvariant()}"
             + $"&page={page}&pageSize={pageSize}";
 
-        // TODO(auth): send the bearer token once login stores one — both endpoints return 401 anonymously.
+        // TODO(auth): the API's search and profile endpoints return 401 anonymously. There is no
+        // sign-in flow in this project yet (only a "Log in" link in NavMenu), so there is no token
+        // to attach. Once login exists and stores the token from POST /api/auth/login
+        // (DoggoDex.Shared.Auth.AuthResponse.Token), send it from here as
+        // Authorization: Bearer <token> — ideally from a DelegatingHandler so every client gets it.
         var response = await http.GetFromJsonAsync<SearchResponse>(url, cancellationToken);
 
         return response ?? throw new InvalidOperationException("GET /api/search returned an empty body.");

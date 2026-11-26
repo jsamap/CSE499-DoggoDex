@@ -7,9 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Profile data source: mocks by default, the real API once DOG-23 / DOG-24 are merged
-// (set Api:UseMocks=false and Api:BaseUrl). Both emit the same DoggoDex.Shared DTOs.
-if (builder.Configuration.GetValue("Api:UseMocks", true))
+// Profile data source. Api:UseMocks only turns on in Development (appsettings.Development.json):
+// the fallback here is false so a deployment that forgets to set it talks to the real API instead
+// of quietly rendering seeded mock profiles. Both paths emit the same DoggoDex.Shared DTOs.
+if (builder.Configuration.GetValue("Api:UseMocks", false))
 {
     builder.Services.AddSingleton<IProfileApi, MockProfileApi>();
 }
