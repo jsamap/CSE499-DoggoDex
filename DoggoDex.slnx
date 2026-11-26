@@ -4,4 +4,8 @@
     <Project Path="src/DoggoDex.Shared/DoggoDex.Shared.csproj" />
     <Project Path="src/DoggoDex.Web/DoggoDex.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DoggoDex.Tests/DoggoDex.Tests.csproj" />
+  </Folder>
 </Solution>
+
