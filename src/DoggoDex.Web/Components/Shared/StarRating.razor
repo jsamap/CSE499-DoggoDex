@@ -1,18 +1,44 @@
-@* Display-only rating: <StarRating Value="4.6" Count="17" /> *@
-<span class="inline-flex items-center gap-2" role="img" aria-label="@Value.ToString("0.#") out of 5 stars">
-    <span class="tracking-widest text-gray-900" aria-hidden="true">
-        @for (var i = 1; i <= 5; i++)
+@* Display-only rating: <StarRating Value="4.6" Count="17" /> — a profile with no reviews has
+   AverageRating == null on the API, so it renders "No reviews yet" instead of 0.0 stars. *@
+@if (HasNoReviews)
+{
+    <span class="inline-flex items-center gap-2 text-sm text-gray-600">
+        <span class="tracking-widest text-gray-400" aria-hidden="true">☆☆☆☆☆</span>
+        No reviews yet
+    </span>
+}
+else
+{
+    var rating = Value.GetValueOrDefault();
+
+    <span class="inline-flex items-center gap-2" role="img" aria-label="@AriaLabel">
+        <span class="tracking-widest text-gray-900" aria-hidden="true">
+            @for (var i = 1; i <= 5; i++)
+            {
+                @(i <= Math.Round(rating) ? "★" : "☆")
+            }
+        </span>
+        @if (Count is not null)
         {
-            @(i <= Math.Round(Value) ? "★" : "☆")
+            <span class="text-sm text-gray-600">@rating.ToString("0.0") · @ReviewLabel</span>
         }
     </span>
-    @if (Count is not null)
-    {
-        <span class="text-sm text-gray-600">@Value.ToString("0.0") · @Count reviews</span>
-    }
-</span>
+}
 
 @code {
-    [Parameter] public double Value { get; set; }
+    /// <summary>Rating out of 5; null (or a zero review count) means "no reviews yet".</summary>
+    [Parameter] public double? Value { get; set; }
+
+    /// <summary>Number of reviews contributing to <see cref="Value"/>.</summary>
     [Parameter] public int? Count { get; set; }
+
+    private bool HasNoReviews => Value is null || Count == 0;
+
+    private string AriaLabel => Count is null
+        ? $"{Value.GetValueOrDefault():0.#} out of 5 stars"
+        : $"{Value.GetValueOrDefault():0.#} out of 5 stars from {Count} {(Count == 1 ? "review" : "reviews")}";
+
+    private string ReviewLabel => Count == 1 ? "1 review" : $"{Count} reviews";
 }
+
+
