@@ -1,5 +1,6 @@
 using DoggoDex.Api.Auth;
 using DoggoDex.Api.Infrastructure;
+using DoggoDex.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(o => o
     .AddInterceptors(new SlugSaveChangesInterceptor()));
 
 builder.Services.AddDoggoDexAuth(builder.Configuration);
+builder.Services.AddScoped<SearchService>();
 builder.Services.AddHealthChecks();
 builder.Services.AddControllers();
 
